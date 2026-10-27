@@ -6,7 +6,7 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 
 | ID  | Task                                          | Type    | Priority | Size | Status      | Notes |
 | --- | --------------------------------------------- | ------- | -------- | ---- | ----------- | ----- |
-| G-1 | Repo setup, tooling, CLAUDE.md and AGENTS.md  | chore   | P1       | S    | In progress |       |
+| G-1 | Repo setup, tooling, CLAUDE.md and AGENTS.md  | chore   | P1       | S    | Done        |       |
 | G-2 | Write the format spec (`docs/format.md`)      | docs    | P1       | S    | Next up     |       |
 | G-3 | Core: parser                                  | feature | P1       | M    | Backlog     |       |
 | G-4 | Core: writer (changes one row only)           | feature | P1       | M    | Backlog     |       |
