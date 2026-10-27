@@ -1,9 +1,9 @@
 import { watch } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { createServer, type Server, type ServerResponse } from "node:http";
+import { readFile, writeFile } from "node:fs/promises";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { basename, dirname, join, resolve } from "node:path";
-import type { ParseWarning, Task } from "@gilas/core";
-import { parse } from "../../../packages/core/src/index.js";
+import type { ParseWarning, Status, Task } from "@gilas/core";
+import { GilasError, parse, parseStatus, setStatus } from "../../../packages/core/src/index.js";
 
 export interface BoardPayload {
   source: string;
@@ -38,6 +38,31 @@ const STATIC_FILES = new Map<string, { path: string; type: string }>([
   ["/styles.css", { path: join(PUBLIC_DIRECTORY, "styles.css"), type: "text/css; charset=utf-8" }],
   ["/client.js", { path: CLIENT_SCRIPT, type: "text/javascript; charset=utf-8" }],
 ]);
+
+class RequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
+async function readJson(request: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of request) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += buffer.byteLength;
+    if (size > 4096) throw new RequestError("Request body is too large.", 413);
+    chunks.push(buffer);
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
+  } catch {
+    throw new RequestError("Request body must be valid JSON.", 400);
+  }
+}
 
 function sendJson(response: ServerResponse, value: unknown, status = 200): void {
   response.writeHead(status, {
@@ -102,9 +127,40 @@ export function watchTaskFile(
   };
 }
 
+export function createTaskStatusWriter(
+  filePath: string,
+): (id: string, status: Status) => Promise<BoardPayload> {
+  const resolvedPath = resolve(filePath);
+  let writeQueue: Promise<void> = Promise.resolve();
+
+  return function saveTaskStatus(id: string, status: Status): Promise<BoardPayload> {
+    const operation = writeQueue.then(async () => {
+      const source = await readFile(resolvedPath, "utf8");
+      const updated = setStatus(source, id, status);
+      if (updated === source) return loadBoard(resolvedPath);
+
+      const current = await readFile(resolvedPath, "utf8");
+      if (current !== source) {
+        throw new RequestError(
+          "The task file changed while saving. Refresh the board and try again.",
+          409,
+        );
+      }
+      await writeFile(resolvedPath, updated, "utf8");
+      return loadBoard(resolvedPath);
+    });
+    writeQueue = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    return operation;
+  };
+}
+
 export function createBoardServer(options: BoardServerOptions): BoardServer {
   const filePath = resolve(options.filePath);
   const clients = new Set<ServerResponse>();
+  const saveTaskStatus = createTaskStatusWriter(filePath);
 
   function broadcast(payload: BoardPayload): void {
     for (const client of clients) sendEvent(client, "board", payload);
@@ -120,9 +176,49 @@ export function createBoardServer(options: BoardServerOptions): BoardServer {
 
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? "/", "http://127.0.0.1");
+    const statusUpdate = /^\/api\/tasks\/([^/]+)\/status$/.exec(url.pathname);
+    if (request.method === "POST" && statusUpdate !== null) {
+      void (async () => {
+        try {
+          if (!request.headers["content-type"]?.startsWith("application/json")) {
+            throw new RequestError("Content-Type must be application/json.", 415);
+          }
+          const body = await readJson(request);
+          if (
+            body === null ||
+            typeof body !== "object" ||
+            !("status" in body) ||
+            typeof body.status !== "string"
+          ) {
+            throw new RequestError("A task status is required.", 400);
+          }
+          const status = parseStatus(body.status);
+          if (status === undefined)
+            throw new RequestError("That task status is not recognised.", 400);
+          const id = decodeURIComponent(statusUpdate[1] ?? "");
+          sendJson(response, await saveTaskStatus(id, status));
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Could not save the task status.";
+          const status =
+            error instanceof RequestError
+              ? error.status
+              : error instanceof GilasError
+                ? error.code === "task-not-found"
+                  ? 404
+                  : error.code === "duplicate-id"
+                    ? 409
+                    : 400
+                : 500;
+          sendJson(response, { error: message }, status);
+        }
+      })();
+      return;
+    }
+
     if (request.method !== "GET") {
-      response.setHeader("Allow", "GET");
-      sendJson(response, { error: "Only GET requests are supported." }, 405);
+      response.setHeader("Allow", "GET, POST");
+      sendJson(response, { error: "Only GET and task status updates are supported." }, 405);
       return;
     }
 

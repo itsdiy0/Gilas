@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadBoard, watchTaskFile } from "../src/server.js";
+import { createTaskStatusWriter, loadBoard, watchTaskFile } from "../src/server.js";
 
 const examples: string[] = [];
 const stopWatchers: (() => void)[] = [];
@@ -80,6 +80,31 @@ describe("Gilas web task source", () => {
     await expect(updated).resolves.toBe("Updated from disk");
     expect(reloadCount).toBe(1);
   }, 5000);
+
+  it("persists a dragged task's status while leaving other rows unchanged", async () => {
+    const path = await makeTasksFile(
+      [
+        "| ID | Task | Status | Notes |",
+        "| --- | --- | --- | --- |",
+        "| G-1 | Move this card | Backlog | Keep this note |",
+        "| G-2 | Leave this card | Review | Handwritten spacing  |",
+        "",
+      ].join("\n"),
+    );
+    const before = await readFile(path, "utf8");
+    const writer = createTaskStatusWriter(path);
+
+    const payload = await writer("G-1", "In progress");
+    const after = await readFile(path, "utf8");
+    const beforeRows = before.split("\n");
+    const afterRows = after.split("\n");
+
+    expect(payload.tasks[0]?.status).toBe("In progress");
+    expect(afterRows[2]).toContain("In progress");
+    expect(afterRows[3]).toBe(beforeRows[3]);
+    expect(afterRows[0]).toBe(beforeRows[0]);
+    expect(afterRows[1]).toBe(beforeRows[1]);
+  });
 
   it("returns a readable error when the selected file is missing", async () => {
     const path = await makeTasksFile("");
