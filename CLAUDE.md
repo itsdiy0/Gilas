@@ -32,7 +32,7 @@ Markdown tables with the columns `| ID | Task | Type | Priority | Size | Status 
 - Plain UK English in the UI and docs.
 - Build in vertical slices. Finish each with lint, typecheck and tests passing before starting the next.
 - Ask before adding a dependency. Pin exact versions (no `^` or `~`) that are at least two weeks old.
-- Commit in small steps with clear messages. Work on branches named `slice/NN-name`. Never push unless asked.
+- Commit in small steps with clear messages. Work on branches named `slice/NN-name` and push them to `origin` after each commit. Never push to or merge into `main`: the owner merges.
 - Track this project in `docs/tasks.md`, in Gilas's own format. Update it in the same commit as the work.
 - When you change the rules here, make the same change in `AGENTS.md`. `pnpm check` verifies they match.
 
