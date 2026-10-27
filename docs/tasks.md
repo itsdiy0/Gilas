@@ -16,7 +16,7 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 
 | ID  | Task                                              | Type    | Priority | Size | Status  | Notes |
 | --- | ------------------------------------------------- | ------- | -------- | ---- | ------- | ----- |
-| G-6 | MCP server with the six tools                     | feature | P1       | L    | Backlog |       |
+| G-6 | MCP server with the six tools                     | feature | P1       | L    | Done    |       |
 | G-7 | Setup docs for Claude Code and Codex              | docs    | P2       | S    | Backlog |       |
 | G-8 | One end-to-end test from each of Claude Code and Codex | test | P2    | M    | Backlog |       |
 

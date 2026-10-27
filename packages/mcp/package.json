@@ -1,0 +1,19 @@
+{
+  "name": "@gilas/mcp",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "esbuild src/bin.ts --bundle --platform=node --target=node24 --format=esm --outfile=dist/gilas-mcp.js"
+  },
+  "dependencies": {
+    "@gilas/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
