@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f4ee" />
+    <title>Gilas task board</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/client.js"></script>
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">G</span>
+        <div>
+          <p class="eyebrow">A calm place to make progress</p>
+          <h1>Gilas</h1>
+        </div>
+      </div>
+      <div class="source-card">
+        <span class="live-dot" id="connection-dot" aria-hidden="true"></span>
+        <div>
+          <p class="source-label">Watching</p>
+          <p class="source-name" id="source-name">Loading task file…</p>
+          <p class="connection-status" id="connection-status" role="status" aria-live="polite">
+            Connecting to the board
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="board-heading" aria-labelledby="board-title">
+        <div>
+          <p class="eyebrow">Your work, at a glance</p>
+          <h2 id="board-title">Task board</h2>
+        </div>
+        <p class="last-updated" id="last-updated"></p>
+      </section>
+      <div class="board" id="board" aria-live="polite" aria-busy="true"></div>
+      <section class="warnings" id="warnings" hidden aria-labelledby="warnings-title">
+        <h2 id="warnings-title">A few rows need attention</h2>
+        <ul id="warning-list"></ul>
+      </section>
+    </main>
+    <footer class="page-footer">
+      <span>Gilas · plain Markdown, always yours</span>
+      <span class="footer-cherry" aria-hidden="true">✳</span>
+    </footer>
+  </body>
+</html>

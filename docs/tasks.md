@@ -25,7 +25,7 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 | ID   | Task                                               | Type    | Priority | Size | Status  | Notes |
 | ---- | -------------------------------------------------- | ------- | -------- | ---- | ------- | ----- |
 | G-9  | Shared board components in `packages/ui`           | feature | P2       | L    | Backlog |       |
-| G-10 | Web app with live file watching                    | feature | P2       | M    | Backlog |       |
+| G-10 | Web app with live file watching                    | feature | P2       | M    | Done        |       |
 
 ## M4 · VS Code extension
 

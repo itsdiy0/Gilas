@@ -179,6 +179,12 @@ importers:
         specifier: 5.0.4
         version: 5.0.4(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2))
 
+  apps/web:
+    dependencies:
+      '@gilas/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
   packages/core: {}
 
   packages/mcp:
