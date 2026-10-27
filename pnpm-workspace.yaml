@@ -1,3 +1,7 @@
 packages:
   - packages/*
   - apps/*
+
+# esbuild's install script only checks its binary, which is already in place.
+allowBuilds:
+  esbuild: false
