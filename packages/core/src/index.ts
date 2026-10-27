@@ -1,3 +1,6 @@
-export const STATUSES = ["Backlog", "Next up", "In progress", "Review", "Done", "Parked"] as const;
-
-export type Status = (typeof STATUSES)[number];
+export type { AddOptions, NewTask, TaskPatch } from "./edit.js";
+export { addTask, setStatus, updateNotes, updateTask } from "./edit.js";
+export { parse, serialise, splitLines } from "./parse.js";
+export { findTasks, nextId, nextTask } from "./query.js";
+export * from "./types.js";
+export { parsePriority, parseSize, parseStatus } from "./values.js";
