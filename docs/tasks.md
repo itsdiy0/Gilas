@@ -18,7 +18,7 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 | --- | ------------------------------------------------- | ------- | -------- | ---- | ------- | ----- |
 | G-6 | MCP server with the six tools                     | feature | P1       | L    | Done    |       |
 | G-7 | Setup docs for Claude Code and Codex              | docs    | P2       | S    | Done    |       |
-| G-8 | One end-to-end test from each of Claude Code and Codex | test | P2    | M    | Review  | Stdio test passes; neither real client run yet |
+| G-8 | One end-to-end test from each of Claude Code and Codex | test | P2    | M    | Done    | Stdio test passes; run by hand against Claude Code and Codex |
 
 ## M3 · Web board
 
