@@ -57,7 +57,7 @@ The writer is a set of pure functions from one file's text to new text. It follo
 1. **Only the changed row is rewritten.** Every other line is byte-identical, including line endings, a byte order mark, trailing spaces, blank lines and hand-written notes.
 2. **Only the changed cells in that row are rewritten.** Other cells keep their exact spacing.
 3. **No re-padding.** A new value is padded to the width of the cell it replaces. If it is longer, the cell grows and the table is left misaligned, which renders the same in markdown.
-4. **A cell that already holds the new value is not touched.** If nothing would change, the text is returned as it was.
+4. **A cell that already means the new value is not touched.** Setting P1 on a cell that says `high`, or Done on one that says `done`, changes nothing. If no cell would change, the text is returned as it was.
 5. **New rows go at the end of a table.** They copy the header's indent and column widths and use the file's line ending. If the table's last line had no line ending (the file ends without a newline), that line gains one.
 6. **The writer never adds columns.** Changing a field the table has no column for is an error.
 7. **Unknown or duplicate IDs are errors.** Nothing is written.
