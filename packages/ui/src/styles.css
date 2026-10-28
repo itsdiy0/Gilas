@@ -7,9 +7,9 @@
   gap: 14px;
   overflow-x: auto;
   overflow-y: hidden;
-  height: min(64dvh, 620px);
-  max-height: calc(100dvh - 280px);
-  min-height: 260px;
+  height: min(58dvh, calc(100dvh - 350px), 620px);
+  max-height: calc(100dvh - 350px);
+  min-height: min(220px, 32dvh);
   padding: 0 1px 8px;
   scrollbar-color: #c8c8bc transparent;
   scrollbar-width: thin;
@@ -631,16 +631,16 @@ body.is-pointer-dragging {
 @media (max-width: 600px) {
   .board {
     grid-auto-columns: min(82vw, 320px);
-    height: min(62dvh, 560px);
-    max-height: calc(100dvh - 220px);
-    min-height: 220px;
+    height: min(58dvh, calc(100dvh - 280px), 560px);
+    max-height: calc(100dvh - 280px);
+    min-height: min(220px, 32dvh);
   }
 }
 
 @media (max-height: 560px) {
   .board {
-    height: 56dvh;
-    max-height: calc(100dvh - 190px);
-    min-height: 190px;
+    height: min(54dvh, calc(100dvh - 250px), 560px);
+    max-height: calc(100dvh - 250px);
+    min-height: min(190px, 32dvh);
   }
 }
