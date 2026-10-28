@@ -1,3 +1,5 @@
+import { createTaskColumn } from "../../../packages/ui/src/index.js";
+
 type TaskStatus = "Backlog" | "Next up" | "In progress" | "Review" | "Done" | "Parked";
 type Priority = "P0" | "P1" | "P2" | "P3";
 
@@ -204,35 +206,6 @@ function addCardDragHandlers(card: HTMLElement, task: TaskView, handle: HTMLButt
   handle.addEventListener("pointerdown", (event) => beginPointerDrag(event, card, task, handle));
 }
 
-function renderTask(task: TaskView): HTMLElement {
-  const priorityClass = task.priority?.toLowerCase() ?? "none";
-  const card = element("article", `task-card priority-${priorityClass}`);
-  card.tabIndex = 0;
-  card.setAttribute("aria-label", `${task.id}: ${task.title}`);
-  card.append(element("p", "task-id", task.id));
-  card.append(element("h4", undefined, task.title));
-
-  const handle = element("button", "drag-handle", "⠿");
-  handle.type = "button";
-  handle.setAttribute("aria-label", `Drag ${task.id} to reorder or change status`);
-  card.append(handle);
-  addCardDragHandlers(card, task, handle);
-
-  if (task.section !== undefined) card.append(element("p", "task-notes", task.section));
-  if (task.notes !== "") card.append(element("p", "task-notes", task.notes));
-
-  const labels = element("div", "task-labels");
-  if (task.type !== "") labels.append(element("span", "task-label", task.type));
-  if (task.priority !== undefined) {
-    labels.append(
-      element("span", `task-label priority priority-${task.priority.toLowerCase()}`, task.priority),
-    );
-  }
-  if (task.size !== undefined) labels.append(element("span", "task-label size", task.size));
-  if (labels.childElementCount > 0) card.append(labels);
-  return card;
-}
-
 function addColumnDropHandlers(column: HTMLElement, status: TaskStatus): void {
   column.dataset.dropStatus = status;
   column.addEventListener("dragover", (event) => {
@@ -258,23 +231,15 @@ function addColumnDropHandlers(column: HTMLElement, status: TaskStatus): void {
 }
 
 function renderColumn(title: string, tasks: TaskView[], status?: TaskStatus): HTMLElement {
-  const section = element("section", "column");
+  const section = createTaskColumn(title, tasks, {
+    ...(status === undefined ? {} : { status }),
+    emptyMessage: "Drop a task here",
+    showDragHandles: true,
+    onCardCreated: (card, task, handle) => {
+      if (handle !== undefined) addCardDragHandlers(card, task, handle);
+    },
+  });
   if (status !== undefined) addColumnDropHandlers(section, status);
-  const heading = element("div", "column-heading");
-  const headingId = `column-${title.toLowerCase().replaceAll(" ", "-")}`;
-  const headingTitle = element("h3", undefined, title);
-  headingTitle.id = headingId;
-  section.setAttribute("aria-labelledby", headingId);
-  heading.append(headingTitle, element("span", "column-count", String(tasks.length)));
-  section.append(heading);
-
-  const list = element("div", "task-list");
-  if (tasks.length === 0) {
-    list.append(element("p", "empty-column", "Drop a task here"));
-  } else {
-    for (const task of tasks) list.append(renderTask(task));
-  }
-  section.append(list);
   return section;
 }
 
