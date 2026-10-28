@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f4ee" />
+    <title>Gilas task board</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/client.js"></script>
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">
+          <svg class="cherry-icon" viewBox="0 0 48 48" fill="none">
+            <path d="M24 18C24 9 18 6 11 6M24 18C25 10 30 7 37 8" stroke="#E8C59B" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M24 16C22 23 18 25 16 29M24 16C26 23 30 25 32 29" stroke="#E8C59B" stroke-width="2.5" stroke-linecap="round" />
+            <circle cx="15" cy="35" r="8.5" fill="#F8DCE0" />
+            <circle cx="33" cy="35" r="8.5" fill="#F8DCE0" />
+            <path d="M11.5 32.5C12.2 31.3 13.1 30.8 14.3 30.8" stroke="#FFF7F2" stroke-width="2" stroke-linecap="round" />
+            <path d="M29.5 32.5C30.2 31.3 31.1 30.8 32.3 30.8" stroke="#FFF7F2" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div>
+          <p class="eyebrow">A calm place to make progress</p>
+          <h1>Gilas</h1>
+        </div>
+      </div>
+      <div class="source-card">
+        <span class="live-dot" id="connection-dot" aria-hidden="true"></span>
+        <div>
+          <p class="source-label">Watching</p>
+          <p class="source-name" id="source-name">Loading task file…</p>
+          <p class="connection-status" id="connection-status" role="status" aria-live="polite">
+            Connecting to the board
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="board-heading" aria-labelledby="board-title">
+        <div>
+          <p class="eyebrow">Your work, at a glance</p>
+          <h2 id="board-title">Task board</h2>
+        </div>
+        <p class="last-updated" id="last-updated"></p>
+      </section>
+      <div class="board" id="board" aria-live="polite" aria-busy="true"></div>
+      <section class="warnings" id="warnings" hidden aria-labelledby="warnings-title">
+        <h2 id="warnings-title">A few rows need attention</h2>
+        <ul id="warning-list"></ul>
+      </section>
+    </main>
+    <footer class="page-footer">
+      <span>Gilas · plain Markdown, always yours</span>
+      <span class="footer-cherry" aria-hidden="true">✳</span>
+    </footer>
+  </body>
+</html>

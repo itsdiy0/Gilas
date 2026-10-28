@@ -1,0 +1,13 @@
+{
+  "name": "@gilas/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc -p tsconfig.server.json && ../../node_modules/.bin/tsc -p tsconfig.browser.json",
+    "dev": "pnpm build && node dist/server/apps/web/src/cli.js",
+    "start": "node dist/server/apps/web/src/cli.js"
+  },
+  "dependencies": {
+    "@gilas/core": "workspace:*"
+  }
+}
