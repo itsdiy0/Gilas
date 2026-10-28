@@ -1,4 +1,4 @@
-import { createTaskColumn } from "../../../packages/ui/src/index.js";
+import { createTaskColumn, createTaskDetailsDialog } from "../../../packages/ui/src/index.js";
 
 type TaskStatus = "Backlog" | "Next up" | "In progress" | "Review" | "Done" | "Parked";
 type Priority = "P0" | "P1" | "P2" | "P3";
@@ -170,6 +170,10 @@ function renderWarnings(warnings: BoardWarning[]): void {
 function addCardDragHandlers(card: HTMLElement, task: TaskView, handle: HTMLButtonElement): void {
   card.draggable = true;
   card.dataset.taskId = task.id;
+  card.addEventListener("click", (event) => {
+    if (event.target instanceof Element && event.target.closest(".drag-handle") !== null) return;
+    openTaskDetails(task, card);
+  });
   card.addEventListener("dragstart", (event) => {
     if (event.dataTransfer === null) return;
     event.dataTransfer.setData("text/plain", task.id);
@@ -204,6 +208,20 @@ function addCardDragHandlers(card: HTMLElement, task: TaskView, handle: HTMLButt
   });
   card.addEventListener("keydown", (event) => handleKeyboardDrag(event, card, task));
   handle.addEventListener("pointerdown", (event) => beginPointerDrag(event, card, task, handle));
+}
+
+function openTaskDetails(task: TaskView, trigger: HTMLElement): void {
+  const dialog = createTaskDetailsDialog(task);
+  document.body.append(dialog);
+  dialog.addEventListener(
+    "close",
+    () => {
+      dialog.remove();
+      if (trigger.isConnected) trigger.focus();
+    },
+    { once: true },
+  );
+  dialog.showModal();
 }
 
 function addColumnDropHandlers(column: HTMLElement, status: TaskStatus): void {
@@ -275,6 +293,13 @@ function render(payload: BoardPayload): void {
 }
 
 function handleKeyboardDrag(event: KeyboardEvent, card: HTMLElement, task: TaskView): void {
+  const isDragHandle =
+    event.target instanceof Element && event.target.closest(".drag-handle") !== null;
+  if (event.code === "Enter" && keyboardDrag === undefined && !isDragHandle) {
+    event.preventDefault();
+    openTaskDetails(task, card);
+    return;
+  }
   if (keyboardDrag?.taskId !== task.id) {
     if (event.code === "ArrowUp" || event.code === "ArrowDown") {
       const siblings = Array.from(
