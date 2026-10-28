@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["node", "vscode"],
+    "noEmit": false,
+    "outDir": "dist/extension",
+    "rootDir": "../.."
+  },
+  "include": ["src/extension.ts", "src/document.ts", "../../packages/core/src"]
+}

@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": [],
+    "noEmit": false,
+    "outDir": "dist/webview",
+    "rootDir": "../.."
+  },
+  "include": ["src/webview.ts", "../../packages/ui/src/index.ts", "../../packages/core/src"]
+}

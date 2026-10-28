@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Gilas extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["${workspaceFolder}/docs/tasks.md"],
+      "outFiles": ["${workspaceFolder}/apps/vscode/dist/extension/**/*.js"],
+      "preLaunchTask": "pnpm build",
+      "extensionDevelopmentPath": ["${workspaceFolder}/apps/vscode"]
+    }
+  ]
+}
