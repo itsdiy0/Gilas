@@ -179,6 +179,12 @@ importers:
         specifier: 5.0.4
         version: 5.0.4(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2))
 
+  apps/vscode:
+    devDependencies:
+      '@types/vscode':
+        specifier: 1.140.0
+        version: 1.140.0
+
   apps/web:
     dependencies:
       '@gilas/core':
@@ -202,6 +208,8 @@ importers:
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
+
+  packages/ui: {}
 
 packages:
 
@@ -557,6 +565,9 @@ packages:
 
   '@types/node@24.19.2':
     resolution: {integrity: sha512-93d49wCWJkCyN87MxLpNN6KXPCwFw7bVUg79mGUV1OS40JGWwVCr8n61DXCSqz7CV6/VfPkb7xec7uP2M+QHWQ==}
+
+  '@types/vscode@1.140.0':
+    resolution: {integrity: sha512-KAB5RBZIgnUhpp4mKsVJPPHLOQKu6WtGy2xpfWjaajEXO4xIIC+UESAXLiQ9ewx6QD1uBmvC/S8BJzkbvv4bRA==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -1511,6 +1522,8 @@ snapshots:
   '@types/node@24.19.2':
     dependencies:
       undici-types: 7.24.6
+
+  '@types/vscode@1.140.0': {}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true

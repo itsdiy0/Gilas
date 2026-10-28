@@ -1,0 +1,41 @@
+{
+  "name": "@gilas/vscode",
+  "displayName": "Gilas",
+  "description": "A Markdown-first task board editor for Gilas task files.",
+  "version": "0.1.0",
+  "publisher": "itsdiy0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/extension/apps/vscode/src/extension.js",
+  "engines": {
+    "vscode": ">=1.90.0"
+  },
+  "activationEvents": [
+    "onCustomEditor:gilas.taskBoard"
+  ],
+  "files": [
+    "dist/**",
+    "package.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc -p tsconfig.extension.json && ../../node_modules/.bin/tsc -p tsconfig.webview.json && node scripts/copy-assets.mjs"
+  },
+  "devDependencies": {
+    "@types/vscode": "1.140.0"
+  },
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "gilas.taskBoard",
+        "displayName": "Gilas Board",
+        "selector": [
+          {
+            "filenamePattern": "**/*_tasks.md"
+          }
+        ],
+        "priority": "default"
+      }
+    ]
+  }
+}

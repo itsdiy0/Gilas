@@ -7,8 +7,8 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 | ID  | Task                                          | Type    | Priority | Size | Status      | Notes |
 | --- | --------------------------------------------- | ------- | -------- | ---- | ----------- | ----- |
 | G-2 | Write the format spec (`docs/format.md`)      | docs    | P1       | S    | Done        |       |
-| G-3 | Core: parser                                  | feature | P1       | M    | Done        |       |
 | G-1 | Repo setup, tooling, CLAUDE.md and AGENTS.md  | chore   | P1       | S    | Done        |       |
+| G-3 | Core: parser                                  | feature | P1       | M    | Done        |       |
 | G-4 | Core: writer (changes one row only)           | feature | P1       | M    | Done        |       |
 | G-5 | Core: round-trip and fixture tests            | test    | P1       | M    | Done        |       |
 
@@ -24,20 +24,20 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 
 | ID   | Task                                               | Type    | Priority | Size | Status  | Notes |
 | ---- | -------------------------------------------------- | ------- | -------- | ---- | ------- | ----- |
-| G-9  | Shared board components in `packages/ui`           | feature | P2       | L    | Done    |       |
 | G-10 | Web app with live file watching                    | feature | P2       | M    | Done        |       |
 | G-12 | Reorder tasks within a column by drag and drop     | feature | P1       | M    | Done    | Allow drag and drop to reorder tasks within the same status column as well as move them between statuses. |
-| G-13 | Show task details in a modal                       | feature | P1       | M    | Done    | Keep descriptions off cards and show task information in a reorganised, responsive modal. |
 | G-14 | Size column scroll areas relative to the viewport  | feature | P1       | S    | Done    | Keep task lists within columns sized to the available viewport height. |
+| G-13 | Show task details in a modal                       | feature | P1       | M    | Done    | Keep descriptions off cards and show task information in a reorganised, responsive modal. |
+| G-9  | Shared board components in `packages/ui`           | feature | P2       | L    | Done    |       |
 | G-15 | Redesign the board with themes and accent colours  | feature | P1       | L    | Done    | Added light/dark themes, five accents, a Liquid Glass render, and matching glass task cards. |
 | G-16 | Add global task search                             | feature | P1       | M    | Done    | Keep search results in status columns; filter by type, priority, size and milestone. |
+| G-17 | Use the full available page width                  | feature | P1       | S    | Done    | Use the full viewport width with consistent responsive page gutters. |
 | G-18 | Make column widths resizable by dragging           | feature | P2       | M    | Done    | Drag or use the keyboard on each column edge; widths are saved in the browser. |
 | G-19 | Use a readable, less playful interface font        | feature | P2       | S    | Done    | Use the familiar Arial and Helvetica stack across the web board and shared UI. |
 | G-20 | Add board-wide and per-column filters              | feature | P1       | M    | Done    | Keep board-wide attribute filters and add text filters above each status column. |
-| G-17 | Use the full available page width                  | feature | P1       | S    | Done    | Use the full viewport width with consistent responsive page gutters. |
 
 ## M4 · VS Code extension
 
 | ID   | Task                                               | Type    | Priority | Size | Status  | Notes |
 | ---- | -------------------------------------------------- | ------- | -------- | ---- | ------- | ----- |
-| G-11 | Custom editor with toggle back to raw text         | feature | P3       | L    | Backlog |       |
+| G-11 | Custom editor with toggle back to raw text         | feature | P3       | L    | Done    | Status changes use the core writer; Open as Markdown returns to text. |
