@@ -85,7 +85,8 @@ export type ErrorCode =
   | "column-missing"
   | "invalid-value"
   | "no-table"
-  | "section-not-found";
+  | "section-not-found"
+  | "different-table";
 
 export class GilasError extends Error {
   readonly code: ErrorCode;

@@ -2,8 +2,14 @@ import { watch } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { basename, dirname, join, resolve } from "node:path";
-import type { ParseWarning, Status, Task } from "@gilas/core";
-import { GilasError, parse, parseStatus, setStatus } from "../../../packages/core/src/index.js";
+import type { ParseWarning, Status, Task, TaskPosition } from "@gilas/core";
+import {
+  GilasError,
+  parse,
+  parseStatus,
+  reorderTask,
+  setStatus,
+} from "../../../packages/core/src/index.js";
 
 export interface BoardPayload {
   source: string;
@@ -129,14 +135,20 @@ export function watchTaskFile(
 
 export function createTaskStatusWriter(
   filePath: string,
-): (id: string, status: Status) => Promise<BoardPayload> {
+): (id: string, status: Status, position?: TaskPosition) => Promise<BoardPayload> {
   const resolvedPath = resolve(filePath);
   let writeQueue: Promise<void> = Promise.resolve();
 
-  return function saveTaskStatus(id: string, status: Status): Promise<BoardPayload> {
+  return function saveTaskStatus(
+    id: string,
+    status: Status,
+    position?: TaskPosition,
+  ): Promise<BoardPayload> {
     const operation = writeQueue.then(async () => {
       const source = await readFile(resolvedPath, "utf8");
-      const updated = setStatus(source, id, status);
+      const statusUpdated = setStatus(source, id, status);
+      const updated =
+        position === undefined ? statusUpdated : reorderTask(statusUpdated, id, position);
       if (updated === source) return loadBoard(resolvedPath);
 
       const current = await readFile(resolvedPath, "utf8");
@@ -195,8 +207,24 @@ export function createBoardServer(options: BoardServerOptions): BoardServer {
           const status = parseStatus(body.status);
           if (status === undefined)
             throw new RequestError("That task status is not recognised.", 400);
+          const hasBefore = "beforeId" in body;
+          const hasAfter = "afterId" in body;
+          if (
+            hasBefore === hasAfter ||
+            (hasBefore && typeof body.beforeId !== "string") ||
+            (hasAfter && typeof body.afterId !== "string")
+          ) {
+            if (hasBefore || hasAfter) {
+              throw new RequestError("Choose one valid task position.", 400);
+            }
+          }
+          const position: TaskPosition | undefined = hasBefore
+            ? { beforeId: body.beforeId as string }
+            : hasAfter
+              ? { afterId: body.afterId as string }
+              : undefined;
           const id = decodeURIComponent(statusUpdate[1] ?? "");
-          sendJson(response, await saveTaskStatus(id, status));
+          sendJson(response, await saveTaskStatus(id, status, position));
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Could not save the task status.";

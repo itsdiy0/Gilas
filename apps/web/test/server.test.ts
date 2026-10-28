@@ -106,6 +106,21 @@ describe("Gilas web task source", () => {
     expect(afterRows[1]).toBe(beforeRows[1]);
   });
 
+  it("persists a task's position in its Markdown table", async () => {
+    const path = await makeTasksFile(
+      "| ID | Task | Status | Notes |\n| --- | --- | --- | --- |\n| G-1 | First  | Backlog | keep  |\n| G-2 | Second | Backlog | as-is |\n| G-3 | Third  | Backlog | too   |\n",
+    );
+    const writer = createTaskStatusWriter(path);
+    const payload = await writer("G-3", "Backlog", { beforeId: "G-1" });
+    expect(payload.tasks.map((task) => task.id)).toEqual(["G-3", "G-1", "G-2"]);
+    const source = await readFile(path, "utf8");
+    expect(source.split("\n").slice(2, 5)).toEqual([
+      "| G-3 | Third  | Backlog | too   |",
+      "| G-1 | First  | Backlog | keep  |",
+      "| G-2 | Second | Backlog | as-is |",
+    ]);
+  });
+
   it("returns a readable error when the selected file is missing", async () => {
     const path = await makeTasksFile("");
     await rm(path);
