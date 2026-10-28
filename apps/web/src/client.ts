@@ -2,6 +2,8 @@ import { createTaskColumn, createTaskDetailsDialog } from "../../../packages/ui/
 
 type TaskStatus = "Backlog" | "Next up" | "In progress" | "Review" | "Done" | "Parked";
 type Priority = "P0" | "P1" | "P2" | "P3";
+type BoardTheme = "light" | "dark";
+type AccentColour = "blue" | "cherry" | "violet" | "teal" | "amber";
 
 interface TaskView {
   id: string;
@@ -59,6 +61,12 @@ const connectionDot = requiredElement<HTMLElement>("#connection-dot");
 const lastUpdated = requiredElement<HTMLElement>("#last-updated");
 const warningsSection = requiredElement<HTMLElement>("#warnings");
 const warningList = requiredElement<HTMLUListElement>("#warning-list");
+const themeToggle = requiredElement<HTMLButtonElement>("#theme-toggle");
+const themeToggleLabel = requiredElement<HTMLElement>("#theme-toggle-label");
+const themeColourMeta = requiredElement<HTMLMetaElement>('meta[name="theme-color"]');
+const accentButtons = Array.from(
+  document.querySelectorAll<HTMLButtonElement>("[data-accent-choice]"),
+);
 
 let currentPayload: BoardPayload | undefined;
 let pointerDrag: PointerDrag | undefined;
@@ -69,6 +77,69 @@ function requiredElement<T extends Element>(selector: string): T {
   const node = document.querySelector<T>(selector);
   if (node === null) throw new Error(`The Gilas board page is missing ${selector}.`);
   return node;
+}
+
+function readPreference<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
+  try {
+    const value = localStorage.getItem(key);
+    if (value !== null && allowed.includes(value as T)) return value as T;
+  } catch {
+    // Keep appearance controls usable when browser storage is unavailable.
+  }
+  return fallback;
+}
+
+function savePreference(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // The selected appearance still applies for this visit.
+  }
+}
+
+function applyTheme(theme: BoardTheme): void {
+  document.documentElement.dataset.theme = theme;
+  themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
+  themeToggle.setAttribute("aria-label", `Switch to ${theme === "dark" ? "light" : "dark"} theme`);
+  themeToggleLabel.textContent = theme === "dark" ? "Dark" : "Light";
+  themeColourMeta.content = theme === "dark" ? "#171923" : "#f2f2f7";
+}
+
+function applyAccent(accent: AccentColour): void {
+  document.documentElement.dataset.accent = accent;
+  for (const button of accentButtons) {
+    button.setAttribute("aria-pressed", String(button.dataset.accentChoice === accent));
+  }
+}
+
+function initialiseAppearanceControls(): void {
+  const themes = ["light", "dark"] as const;
+  const accents = ["blue", "cherry", "violet", "teal", "amber"] as const;
+  const theme = readPreference("gilas-theme", themes, "light");
+  const accent = readPreference("gilas-accent", accents, "blue");
+  applyTheme(theme);
+  applyAccent(accent);
+
+  themeToggle.addEventListener("click", () => {
+    const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+    savePreference("gilas-theme", nextTheme);
+  });
+  for (const button of accentButtons) {
+    button.addEventListener("click", () => {
+      const nextAccent = button.dataset.accentChoice;
+      if (
+        nextAccent === "blue" ||
+        nextAccent === "cherry" ||
+        nextAccent === "violet" ||
+        nextAccent === "teal" ||
+        nextAccent === "amber"
+      ) {
+        applyAccent(nextAccent);
+        savePreference("gilas-accent", nextAccent);
+      }
+    });
+  }
 }
 
 function element<K extends keyof HTMLElementTagNameMap>(
@@ -498,4 +569,5 @@ async function loadBoardAndConnect(): Promise<void> {
   await loadBoard();
 }
 
+initialiseAppearanceControls();
 void loadBoardAndConnect();
