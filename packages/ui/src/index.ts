@@ -113,6 +113,13 @@ export function createTaskDetailsDialog<T extends TaskCardData>(
   title.id = "task-details-title";
   heading.append(title);
 
+  const context = element(document, "div", "task-details-context");
+  context.append(element(document, "span", "task-details-id", task.id));
+  const status = element(document, "span", "task-details-status", task.status ?? "Unrecognised");
+  status.dataset.status = task.status?.toLowerCase().replaceAll(" ", "-") ?? "unrecognised";
+  context.append(status);
+  heading.append(context);
+
   const close = element(document, "button", "task-details-close", "Close");
   close.type = "button";
   close.setAttribute("aria-label", "Close task details");
@@ -121,12 +128,17 @@ export function createTaskDetailsDialog<T extends TaskCardData>(
   panel.append(header);
 
   const description = element(document, "section", "task-details-description");
-  description.append(element(document, "h3", undefined, "Description"));
+  const descriptionHeading = element(document, "div", "task-details-section-heading");
+  descriptionHeading.append(element(document, "h3", undefined, "Description"));
+  descriptionHeading.append(element(document, "span", "task-details-description-mark", "✦"));
+  description.append(descriptionHeading);
   description.append(
     element(document, "p", undefined, task.notes === "" ? "No description provided." : task.notes),
   );
   panel.append(description);
 
+  const details = element(document, "section", "task-details-section");
+  details.append(element(document, "h3", undefined, "Details"));
   const metadata = element(document, "dl", "task-details-metadata");
   const addMetadata = (label: string, value: string | undefined) => {
     const item = element(document, "div", "task-details-item");
@@ -134,13 +146,12 @@ export function createTaskDetailsDialog<T extends TaskCardData>(
     item.append(element(document, "dd", undefined, value || "Not set"));
     metadata.append(item);
   };
-  addMetadata("ID", task.id);
   addMetadata("Type", task.type);
   addMetadata("Priority", task.priority);
   addMetadata("Size", task.size);
-  addMetadata("Status", task.status ?? "Unrecognised");
   addMetadata("Milestone", task.section);
-  panel.append(metadata);
+  details.append(metadata);
+  panel.append(details);
 
   dialog.append(panel);
   dialog.addEventListener("click", (event) => {
