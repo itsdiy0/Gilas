@@ -74,6 +74,7 @@ const accentButtons = Array.from(
   document.querySelectorAll<HTMLButtonElement>("[data-accent-choice]"),
 );
 const missingFilterValue = "__gilas_missing__";
+const columnFilters = new Map<string, string>();
 const filterDefinitions: {
   key: TaskFilterKey;
   select: HTMLSelectElement;
@@ -379,21 +380,41 @@ function readTaskFilters(): TaskFilters {
   return filters;
 }
 
+function updateSearchSummary(tasks: TaskView[], matchingTasks: TaskView[]): void {
+  let visibleCount = 0;
+  for (const status of statuses) {
+    const statusTasks = matchingTasks.filter((task) => task.status === status);
+    visibleCount += filterTasks(statusTasks, columnFilters.get(status) ?? "", {}).length;
+  }
+  const unrecognisedTasks = matchingTasks.filter((task) => task.status === undefined);
+  visibleCount += filterTasks(
+    unrecognisedTasks,
+    columnFilters.get("Unrecognised status") ?? "",
+    {},
+  ).length;
+
+  const hasColumnFilter = Array.from(columnFilters.values()).some((query) => query.trim() !== "");
+  const active =
+    taskSearch.value.trim() !== "" ||
+    filterDefinitions.some((definition) => definition.select.value !== "") ||
+    hasColumnFilter;
+  clearSearchButton.hidden = !active;
+  const totalLabel = tasks.length === 1 ? "task" : "tasks";
+  searchSummary.textContent = active
+    ? `${visibleCount} of ${tasks.length} ${totalLabel}`
+    : `${tasks.length} ${totalLabel}`;
+}
+
 function updateSearchControls(tasks: TaskView[]): TaskView[] {
   updateFilterOptions(tasks);
   const filters = readTaskFilters();
   const activeFilterCount = filterDefinitions.filter((definition) => {
     return definition.select.value !== "";
   }).length;
-  const active = taskSearch.value.trim() !== "" || activeFilterCount > 0;
   const matchingTasks = filterTasks(tasks, taskSearch.value, filters);
   filterCount.textContent = String(activeFilterCount);
   filterCount.hidden = activeFilterCount === 0;
-  clearSearchButton.hidden = !active;
-  const totalLabel = tasks.length === 1 ? "task" : "tasks";
-  searchSummary.textContent = active
-    ? `${matchingTasks.length} of ${tasks.length} ${totalLabel}`
-    : `${tasks.length} ${totalLabel}`;
+  updateSearchSummary(tasks, matchingTasks);
   return matchingTasks;
 }
 
@@ -410,6 +431,7 @@ function initialiseSearchControls(): void {
   clearSearchButton.addEventListener("click", () => {
     taskSearch.value = "";
     for (const definition of filterDefinitions) definition.select.value = "";
+    columnFilters.clear();
     if (currentPayload !== undefined) render(currentPayload);
     taskSearch.focus();
   });
@@ -595,20 +617,30 @@ function addColumnDropHandlers(column: HTMLElement, status: TaskStatus): void {
   });
 }
 
+function createColumnContent(
+  title: string,
+  tasks: TaskView[],
+  status?: TaskStatus,
+  emptyMessage = "Drop a task here",
+): HTMLElement {
+  const query = columnFilters.get(title) ?? "";
+  return createTaskColumn(title, filterTasks(tasks, query, {}), {
+    ...(status === undefined ? {} : { status }),
+    emptyMessage: query.trim() === "" ? emptyMessage : "No matching tasks",
+    showDragHandles: true,
+    onCardCreated: (card, task, handle) => {
+      if (handle !== undefined) addCardDragHandlers(card, task, handle);
+    },
+  });
+}
+
 function renderColumn(
   title: string,
   tasks: TaskView[],
   status?: TaskStatus,
   emptyMessage = "Drop a task here",
 ): HTMLElement {
-  const section = createTaskColumn(title, tasks, {
-    ...(status === undefined ? {} : { status }),
-    emptyMessage,
-    showDragHandles: true,
-    onCardCreated: (card, task, handle) => {
-      if (handle !== undefined) addCardDragHandlers(card, task, handle);
-    },
-  });
+  const section = createColumnContent(title, tasks, status, emptyMessage);
   if (status !== undefined) {
     addColumnDropHandlers(section, status);
     const resizer = element("div", "column-resizer");
@@ -622,6 +654,41 @@ function renderColumn(
     resizer.addEventListener("keydown", handleColumnResizeKeydown);
     section.append(resizer);
   }
+
+  const columnSearch = element("input", "column-filter");
+  columnSearch.type = "search";
+  columnSearch.placeholder = "Filter this column";
+  columnSearch.value = columnFilters.get(title) ?? "";
+  columnSearch.autocomplete = "off";
+  columnSearch.spellcheck = false;
+  columnSearch.setAttribute("aria-label", `Filter ${title} tasks`);
+  const taskList = section.querySelector<HTMLElement>(".task-list");
+  if (taskList !== null) section.insertBefore(columnSearch, taskList);
+  columnSearch.addEventListener("input", () => {
+    if (columnSearch.value.trim() === "") columnFilters.delete(title);
+    else columnFilters.set(title, columnSearch.value);
+
+    const payload = currentPayload;
+    if (payload === undefined) return;
+    const matchingTasks = filterTasks(payload.tasks, taskSearch.value, readTaskFilters());
+    const columnTasks =
+      status === undefined
+        ? matchingTasks.filter((task) => task.status === undefined)
+        : matchingTasks.filter((task) => task.status === status);
+    const updated = createColumnContent(title, columnTasks, status, emptyMessage);
+    const currentCount = section.querySelector(".column-count");
+    const updatedCount = updated.querySelector(".column-count");
+    if (currentCount !== null && updatedCount !== null) currentCount.replaceWith(updatedCount);
+
+    const currentList = section.querySelector<HTMLElement>(".task-list");
+    const updatedList = updated.querySelector<HTMLElement>(".task-list");
+    if (currentList !== null && updatedList !== null) {
+      updatedList.scrollTop = currentList.scrollTop;
+      updatedList.scrollLeft = currentList.scrollLeft;
+      currentList.replaceWith(updatedList);
+    }
+    updateSearchSummary(payload.tasks, matchingTasks);
+  });
   return section;
 }
 
