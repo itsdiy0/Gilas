@@ -51,6 +51,9 @@ interface KeyboardDrag {
 }
 
 const statuses: TaskStatus[] = ["Backlog", "Next up", "In progress", "Review", "Done", "Parked"];
+const minimumColumnWidth = 150;
+const maximumColumnWidth = 720;
+const columnWidthsStorageKey = "gilas-column-widths";
 const board = requiredElement<HTMLElement>("#board");
 const sourceName = requiredElement<HTMLElement>("#source-name");
 const connectionStatus = requiredElement<HTMLElement>("#connection-status");
@@ -106,6 +109,16 @@ const filterDefinitions: {
 let currentPayload: BoardPayload | undefined;
 let pointerDrag: PointerDrag | undefined;
 let keyboardDrag: KeyboardDrag | undefined;
+let columnResizeDrag:
+  | {
+      pointerId: number;
+      status: TaskStatus;
+      startX: number;
+      startWidth: number;
+      initialWidths: Record<TaskStatus, number>;
+    }
+  | undefined;
+let columnWidths = readColumnWidths();
 const pendingMoves = new Set<string>();
 
 function requiredElement<T extends Element>(selector: string): T {
@@ -131,6 +144,149 @@ function savePreference(key: string, value: string): void {
     // The selected appearance still applies for this visit.
   }
 }
+
+function readColumnWidths(): Record<TaskStatus, number> | undefined {
+  try {
+    const stored = localStorage.getItem(columnWidthsStorageKey);
+    if (stored === null) return undefined;
+    const parsed: unknown = JSON.parse(stored);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
+    const values = parsed as Partial<Record<TaskStatus, unknown>>;
+    const widths = {} as Record<TaskStatus, number>;
+    for (const status of statuses) {
+      const width = values[status];
+      if (typeof width !== "number" || !Number.isFinite(width)) return undefined;
+      widths[status] = Math.min(maximumColumnWidth, Math.max(minimumColumnWidth, width));
+    }
+    return widths;
+  } catch {
+    return undefined;
+  }
+}
+
+function saveColumnWidths(): void {
+  if (columnWidths === undefined) return;
+  try {
+    localStorage.setItem(columnWidthsStorageKey, JSON.stringify(columnWidths));
+  } catch {
+    // Resizing still works for this visit when browser storage is unavailable.
+  }
+}
+
+function renderedColumnWidths(): Record<TaskStatus, number> {
+  const widths = {} as Record<TaskStatus, number>;
+  const columns = Array.from(board.querySelectorAll<HTMLElement>(".column[data-drop-status]"));
+  for (const status of statuses) {
+    const column = columns.find((item) => item.dataset.dropStatus === status);
+    const width = column?.getBoundingClientRect().width ?? minimumColumnWidth;
+    widths[status] = Math.min(maximumColumnWidth, Math.max(minimumColumnWidth, width));
+  }
+  return widths;
+}
+
+function updateResizeHandleValues(): void {
+  const renderedWidths = columnWidths === undefined ? renderedColumnWidths() : undefined;
+  for (const handle of board.querySelectorAll<HTMLElement>(".column-resizer")) {
+    const status = statuses.find((item) => item === handle.dataset.resizeStatus);
+    if (status === undefined) continue;
+    const width = columnWidths?.[status] ?? renderedWidths?.[status] ?? minimumColumnWidth;
+    handle.setAttribute("aria-valuenow", String(Math.round(width)));
+  }
+}
+
+function applyColumnWidths(): void {
+  if (columnWidths === undefined || !window.matchMedia("(min-width: 1200px)").matches) {
+    board.classList.remove("has-column-widths");
+    board.style.removeProperty("grid-template-columns");
+    updateResizeHandleValues();
+    return;
+  }
+  board.classList.add("has-column-widths");
+  board.style.gridTemplateColumns = [
+    ...statuses.map((status) => `${Math.round(columnWidths?.[status] ?? minimumColumnWidth)}px`),
+    ...(board.querySelector(".column:not([data-drop-status])") === null
+      ? []
+      : ["minmax(150px, 1fr)"]),
+  ].join(" ");
+  updateResizeHandleValues();
+}
+
+function handleColumnResizeKeydown(event: KeyboardEvent): void {
+  if (event.code !== "ArrowLeft" && event.code !== "ArrowRight") return;
+  if (!window.matchMedia("(min-width: 1200px)").matches) return;
+  const handle = event.currentTarget as HTMLElement;
+  const status = statuses.find((item) => item === handle.dataset.resizeStatus);
+  if (status === undefined) return;
+  event.preventDefault();
+  const widths = columnWidths ?? renderedColumnWidths();
+  const step = event.shiftKey ? 40 : 12;
+  const change = event.code === "ArrowRight" ? step : -step;
+  columnWidths = {
+    ...widths,
+    [status]: Math.min(maximumColumnWidth, Math.max(minimumColumnWidth, widths[status] + change)),
+  };
+  applyColumnWidths();
+  saveColumnWidths();
+}
+
+function beginColumnResize(event: PointerEvent, handle: HTMLElement): void {
+  if (event.button !== 0 || !window.matchMedia("(min-width: 1200px)").matches) return;
+  const status = statuses.find((item) => item === handle.dataset.resizeStatus);
+  if (status === undefined) return;
+  const widths = columnWidths ?? renderedColumnWidths();
+  columnWidths = widths;
+  columnResizeDrag = {
+    pointerId: event.pointerId,
+    status,
+    startX: event.clientX,
+    startWidth: widths[status],
+    initialWidths: widths,
+  };
+  event.preventDefault();
+  try {
+    handle.setPointerCapture(event.pointerId);
+  } catch {
+    // Keep resizing available when pointer capture is not supported.
+  }
+  applyColumnWidths();
+}
+
+function finishColumnResize(): void {
+  if (columnResizeDrag === undefined) return;
+  columnResizeDrag = undefined;
+  saveColumnWidths();
+}
+
+board.addEventListener("pointerdown", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const handle = event.target.closest<HTMLElement>(".column-resizer");
+  if (handle !== null) beginColumnResize(event, handle);
+});
+document.addEventListener(
+  "pointermove",
+  (event) => {
+    const drag = columnResizeDrag;
+    if (drag === undefined || event.pointerId !== drag.pointerId) return;
+    event.preventDefault();
+    const delta = event.clientX - drag.startX;
+    columnWidths = {
+      ...drag.initialWidths,
+      [drag.status]: Math.min(
+        maximumColumnWidth,
+        Math.max(minimumColumnWidth, drag.startWidth + delta),
+      ),
+    };
+    applyColumnWidths();
+  },
+  { passive: false },
+);
+document.addEventListener("pointerup", (event) => {
+  if (columnResizeDrag?.pointerId === event.pointerId) finishColumnResize();
+});
+document.addEventListener("pointercancel", (event) => {
+  if (columnResizeDrag?.pointerId === event.pointerId) finishColumnResize();
+});
+window.addEventListener("resize", applyColumnWidths);
 
 function applyTheme(theme: BoardTheme): void {
   document.documentElement.dataset.theme = theme;
@@ -453,7 +609,19 @@ function renderColumn(
       if (handle !== undefined) addCardDragHandlers(card, task, handle);
     },
   });
-  if (status !== undefined) addColumnDropHandlers(section, status);
+  if (status !== undefined) {
+    addColumnDropHandlers(section, status);
+    const resizer = element("div", "column-resizer");
+    resizer.dataset.resizeStatus = status;
+    resizer.tabIndex = 0;
+    resizer.setAttribute("role", "separator");
+    resizer.setAttribute("aria-orientation", "vertical");
+    resizer.setAttribute("aria-label", `Resize ${title} column`);
+    resizer.setAttribute("aria-valuemin", String(minimumColumnWidth));
+    resizer.setAttribute("aria-valuemax", String(maximumColumnWidth));
+    resizer.addEventListener("keydown", handleColumnResizeKeydown);
+    section.append(resizer);
+  }
   return section;
 }
 
@@ -492,6 +660,7 @@ function render(payload: BoardPayload): void {
   if (unrecognised.length > 0) {
     board.append(renderColumn("Unrecognised status", unrecognised, undefined, emptyMessage));
   }
+  applyColumnWidths();
   board.setAttribute("aria-busy", "false");
   renderWarnings(payload.warnings);
 }
