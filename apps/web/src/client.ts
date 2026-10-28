@@ -1,20 +1,17 @@
 import { createTaskColumn, createTaskDetailsDialog } from "../../../packages/ui/src/index.js";
+import {
+  filterTasks,
+  type SearchableTask,
+  type TaskFilterKey,
+  type TaskFilters,
+} from "./search.js";
 
 type TaskStatus = "Backlog" | "Next up" | "In progress" | "Review" | "Done" | "Parked";
 type Priority = "P0" | "P1" | "P2" | "P3";
 type BoardTheme = "light" | "dark";
 type AccentColour = "blue" | "cherry" | "violet" | "teal" | "amber";
 
-interface TaskView {
-  id: string;
-  title: string;
-  type: string;
-  priority: Priority | undefined;
-  size: string | undefined;
-  status: TaskStatus | undefined;
-  notes: string;
-  section: string | undefined;
-}
+type TaskView = SearchableTask & { priority: Priority | undefined; status: TaskStatus | undefined };
 
 interface BoardWarning {
   line: number;
@@ -64,9 +61,47 @@ const warningList = requiredElement<HTMLUListElement>("#warning-list");
 const themeToggle = requiredElement<HTMLButtonElement>("#theme-toggle");
 const themeToggleLabel = requiredElement<HTMLElement>("#theme-toggle-label");
 const themeColourMeta = requiredElement<HTMLMetaElement>('meta[name="theme-color"]');
+const taskSearchForm = requiredElement<HTMLFormElement>("#task-search-form");
+const taskSearch = requiredElement<HTMLInputElement>("#task-search");
+const filterMenu = requiredElement<HTMLDetailsElement>("#task-filter-menu");
+const filterCount = requiredElement<HTMLElement>("#filter-count");
+const clearSearchButton = requiredElement<HTMLButtonElement>("#clear-search");
+const searchSummary = requiredElement<HTMLElement>("#search-summary");
 const accentButtons = Array.from(
   document.querySelectorAll<HTMLButtonElement>("[data-accent-choice]"),
 );
+const missingFilterValue = "__gilas_missing__";
+const filterDefinitions: {
+  key: TaskFilterKey;
+  select: HTMLSelectElement;
+  placeholder: string;
+  getValue: (task: TaskView) => string | undefined;
+}[] = [
+  {
+    key: "type",
+    select: requiredElement<HTMLSelectElement>("#type-filter"),
+    placeholder: "Any type",
+    getValue: (task) => task.type,
+  },
+  {
+    key: "priority",
+    select: requiredElement<HTMLSelectElement>("#priority-filter"),
+    placeholder: "Any priority",
+    getValue: (task) => task.priority,
+  },
+  {
+    key: "size",
+    select: requiredElement<HTMLSelectElement>("#size-filter"),
+    placeholder: "Any size",
+    getValue: (task) => task.size,
+  },
+  {
+    key: "section",
+    select: requiredElement<HTMLSelectElement>("#milestone-filter"),
+    placeholder: "Any milestone",
+    getValue: (task) => task.section,
+  },
+];
 
 let currentPayload: BoardPayload | undefined;
 let pointerDrag: PointerDrag | undefined;
@@ -140,6 +175,91 @@ function initialiseAppearanceControls(): void {
       }
     });
   }
+}
+
+function encodeFilterOption(value: string | undefined): string {
+  return value === undefined ? missingFilterValue : `value:${value}`;
+}
+
+function decodeFilterSelection(value: string): string | null | undefined {
+  if (value === "") return undefined;
+  if (value === missingFilterValue) return null;
+  return value.startsWith("value:") ? value.slice("value:".length) : undefined;
+}
+
+function updateFilterOptions(tasks: TaskView[]): void {
+  for (const definition of filterDefinitions) {
+    const previousValue = definition.select.value;
+    const values = new Set<string>();
+    let hasMissing = false;
+    for (const task of tasks) {
+      const value = definition.getValue(task)?.trim();
+      if (value === undefined || value === "") hasMissing = true;
+      else values.add(value);
+    }
+    if (previousValue === missingFilterValue) hasMissing = true;
+    if (previousValue.startsWith("value:")) {
+      values.add(previousValue.slice("value:".length));
+    }
+
+    const options = [new Option(definition.placeholder, "")];
+    for (const value of Array.from(values).sort((left, right) =>
+      left.localeCompare(right, "en-GB"),
+    )) {
+      options.push(new Option(value, encodeFilterOption(value)));
+    }
+    if (hasMissing) options.push(new Option("Not set", missingFilterValue));
+    definition.select.replaceChildren(...options);
+    definition.select.value = previousValue;
+  }
+}
+
+function readTaskFilters(): TaskFilters {
+  const filters: TaskFilters = {};
+  for (const definition of filterDefinitions) {
+    const value = decodeFilterSelection(definition.select.value);
+    if (value !== undefined) filters[definition.key] = value;
+  }
+  return filters;
+}
+
+function updateSearchControls(tasks: TaskView[]): TaskView[] {
+  updateFilterOptions(tasks);
+  const filters = readTaskFilters();
+  const activeFilterCount = filterDefinitions.filter((definition) => {
+    return definition.select.value !== "";
+  }).length;
+  const active = taskSearch.value.trim() !== "" || activeFilterCount > 0;
+  const matchingTasks = filterTasks(tasks, taskSearch.value, filters);
+  filterCount.textContent = String(activeFilterCount);
+  filterCount.hidden = activeFilterCount === 0;
+  clearSearchButton.hidden = !active;
+  const totalLabel = tasks.length === 1 ? "task" : "tasks";
+  searchSummary.textContent = active
+    ? `${matchingTasks.length} of ${tasks.length} ${totalLabel}`
+    : `${tasks.length} ${totalLabel}`;
+  return matchingTasks;
+}
+
+function initialiseSearchControls(): void {
+  taskSearchForm.addEventListener("submit", (event) => event.preventDefault());
+  taskSearch.addEventListener("input", () => {
+    if (currentPayload !== undefined) render(currentPayload);
+  });
+  for (const definition of filterDefinitions) {
+    definition.select.addEventListener("change", () => {
+      if (currentPayload !== undefined) render(currentPayload);
+    });
+  }
+  clearSearchButton.addEventListener("click", () => {
+    taskSearch.value = "";
+    for (const definition of filterDefinitions) definition.select.value = "";
+    if (currentPayload !== undefined) render(currentPayload);
+    taskSearch.focus();
+  });
+  document.addEventListener("click", (event) => {
+    if (event.target instanceof Node && !filterMenu.contains(event.target)) filterMenu.open = false;
+  });
 }
 
 function element<K extends keyof HTMLElementTagNameMap>(
@@ -319,10 +439,15 @@ function addColumnDropHandlers(column: HTMLElement, status: TaskStatus): void {
   });
 }
 
-function renderColumn(title: string, tasks: TaskView[], status?: TaskStatus): HTMLElement {
+function renderColumn(
+  title: string,
+  tasks: TaskView[],
+  status?: TaskStatus,
+  emptyMessage = "Drop a task here",
+): HTMLElement {
   const section = createTaskColumn(title, tasks, {
     ...(status === undefined ? {} : { status }),
-    emptyMessage: "Drop a task here",
+    emptyMessage,
     showDragHandles: true,
     onCardCreated: (card, task, handle) => {
       if (handle !== undefined) addCardDragHandlers(card, task, handle);
@@ -340,6 +465,11 @@ function render(payload: BoardPayload): void {
     minute: "2-digit",
   })}`;
   board.replaceChildren();
+  const matchingTasks = updateSearchControls(payload.tasks);
+  const searchIsActive =
+    taskSearch.value.trim() !== "" ||
+    filterDefinitions.some((definition) => definition.select.value !== "");
+  const emptyMessage = searchIsActive ? "No matching tasks" : "Drop a task here";
 
   if (payload.error !== undefined) {
     board.setAttribute("aria-busy", "false");
@@ -352,13 +482,16 @@ function render(payload: BoardPayload): void {
     board.append(
       renderColumn(
         status,
-        payload.tasks.filter((task) => task.status === status),
+        matchingTasks.filter((task) => task.status === status),
         status,
+        emptyMessage,
       ),
     );
   }
-  const unrecognised = payload.tasks.filter((task) => task.status === undefined);
-  if (unrecognised.length > 0) board.append(renderColumn("Unrecognised status", unrecognised));
+  const unrecognised = matchingTasks.filter((task) => task.status === undefined);
+  if (unrecognised.length > 0) {
+    board.append(renderColumn("Unrecognised status", unrecognised, undefined, emptyMessage));
+  }
   board.setAttribute("aria-busy", "false");
   renderWarnings(payload.warnings);
 }
@@ -570,4 +703,5 @@ async function loadBoardAndConnect(): Promise<void> {
 }
 
 initialiseAppearanceControls();
+initialiseSearchControls();
 void loadBoardAndConnect();

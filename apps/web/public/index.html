@@ -70,6 +70,50 @@
         </div>
         <p class="last-updated" id="last-updated"></p>
       </section>
+      <form class="board-tools" id="task-search-form" role="search">
+        <div class="search-controls">
+          <label class="visually-hidden" for="task-search">Search tasks</label>
+          <input
+            class="task-search"
+            id="task-search"
+            name="q"
+            type="search"
+            placeholder="Search tasks"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <details class="filter-menu" id="task-filter-menu">
+            <summary class="filter-button">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M3 4.5h14l-5.3 6.1v4.2l-3.4 1.8v-6L3 4.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              </svg>
+              <span>Filters</span>
+              <span class="filter-count" id="filter-count" hidden></span>
+            </summary>
+            <div class="filter-popover">
+              <p class="filter-heading">Filter tasks</p>
+              <label for="type-filter">Type</label>
+              <select id="type-filter" data-task-filter="type" aria-label="Filter by type">
+                <option value="">Any type</option>
+              </select>
+              <label for="priority-filter">Priority</label>
+              <select id="priority-filter" data-task-filter="priority" aria-label="Filter by priority">
+                <option value="">Any priority</option>
+              </select>
+              <label for="size-filter">Size</label>
+              <select id="size-filter" data-task-filter="size" aria-label="Filter by size">
+                <option value="">Any size</option>
+              </select>
+              <label for="milestone-filter">Milestone</label>
+              <select id="milestone-filter" data-task-filter="section" aria-label="Filter by milestone">
+                <option value="">Any milestone</option>
+              </select>
+            </div>
+          </details>
+          <button class="clear-search" id="clear-search" type="button" hidden>Clear</button>
+        </div>
+        <p class="search-summary" id="search-summary" role="status" aria-live="polite"></p>
+      </form>
       <div class="board" id="board" aria-live="polite" aria-busy="true"></div>
       <section class="warnings" id="warnings" hidden aria-labelledby="warnings-title">
         <h2 id="warnings-title">A few rows need attention</h2>
