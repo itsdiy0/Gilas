@@ -26,6 +26,11 @@ export interface AddOptions {
   prefix?: string;
 }
 
+export interface TaskPosition {
+  beforeId?: string;
+  afterId?: string;
+}
+
 const COLUMN_OF: Record<keyof TaskPatch, keyof Columns> = {
   title: "title",
   type: "type",
@@ -115,6 +120,46 @@ export function updateTask(source: string, id: string, patch: TaskPatch): string
 
 export const setStatus = (source: string, id: string, status: Status): string =>
   updateTask(source, id, { status });
+
+/** Moves a task row relative to another task in the same Markdown table. */
+export function reorderTask(source: string, id: string, position: TaskPosition): string {
+  const hasBefore = position.beforeId !== undefined;
+  const hasAfter = position.afterId !== undefined;
+  if (hasBefore === hasAfter) {
+    throw new GilasError("invalid-value", "Choose exactly one task to move before or after.");
+  }
+
+  const doc = parse(source);
+  const moving = locate(doc, id);
+  const anchorId = position.beforeId ?? position.afterId;
+  if (anchorId === undefined) throw new GilasError("invalid-value", "A position is required.");
+  const anchor = locate(doc, anchorId);
+  if (moving.table !== anchor.table) {
+    throw new GilasError(
+      "different-table",
+      "Tasks can only be reordered within the same milestone table.",
+    );
+  }
+  if (moving.task.id.toLowerCase() === anchor.task.id.toLowerCase()) return source;
+
+  const lines = doc.lines.map((line) => ({ ...line }));
+  const movingIndex = moving.task.line - 1;
+  const anchorIndex = anchor.task.line - 1;
+  const rowTexts = lines.slice(moving.table.firstRow, moving.table.endRow).map((line) => line.text);
+  const localMovingIndex = movingIndex - moving.table.firstRow;
+  const localAnchorIndex = anchorIndex - moving.table.firstRow;
+  const [rowText] = rowTexts.splice(localMovingIndex, 1);
+  if (rowText === undefined) return source;
+  const adjustedAnchorIndex =
+    localAnchorIndex > localMovingIndex ? localAnchorIndex - 1 : localAnchorIndex;
+  const insertAt = position.beforeId !== undefined ? adjustedAnchorIndex : adjustedAnchorIndex + 1;
+  rowTexts.splice(insertAt, 0, rowText);
+  for (let index = 0; index < rowTexts.length; index += 1) {
+    const line = lines[moving.table.firstRow + index];
+    if (line !== undefined) line.text = rowTexts[index] as string;
+  }
+  return lines.map((line) => line.text + line.terminator).join("");
+}
 
 /** Replaces the notes, or adds to them when `append` is set. */
 export function updateNotes(

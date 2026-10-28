@@ -4,6 +4,7 @@ import {
   addTask,
   GilasError,
   parse,
+  reorderTask,
   STATUSES,
   serialise,
   setStatus,
@@ -141,6 +142,32 @@ describe("updateNotes", () => {
     expect(parse(after).tasks[1]?.notes).toBe("started Monday; blocked on X");
     const empty = updateNotes(source, "G-1", "first", { append: true });
     expect(parse(empty).tasks[0]?.notes).toBe("first");
+  });
+});
+
+describe("reorderTask", () => {
+  it("moves only task rows and preserves the text and line endings", () => {
+    const source =
+      "## M1\r\n| ID | Task | Status | Notes |\r\n| --- | --- | --- | --- |\r\n| G-1 | First  | Backlog | keep  |\r\n| G-2 | Second | Backlog | as-is |\r\n| G-3 | Third  | Backlog | too   |";
+    const after = reorderTask(source, "G-3", { beforeId: "G-1" });
+    expect(parse(after).tasks.map((task) => task.id)).toEqual(["G-3", "G-1", "G-2"]);
+    expect(after.split("\r\n").slice(3)).toEqual([
+      "| G-3 | Third  | Backlog | too   |",
+      "| G-1 | First  | Backlog | keep  |",
+      "| G-2 | Second | Backlog | as-is |",
+    ]);
+    expect(after.endsWith("|")).toBe(true);
+    expect(after.replace(/\r\n/g, "").includes("\n")).toBe(false);
+  });
+
+  it("allows moving a row after an anchor and rejects another milestone", () => {
+    const source = fixtures.basic as string;
+    const after = reorderTask(source, "G-1", { afterId: "G-2" });
+    expect(parse(after).tasks.map((task) => task.id)).toEqual(["G-2", "G-1", "G-3"]);
+    expect(codeOf(() => reorderTask(source, "G-1", { beforeId: "G-3" }))).toBe("different-table");
+    expect(codeOf(() => reorderTask(source, "G-1", { beforeId: "G-2", afterId: "G-2" }))).toBe(
+      "invalid-value",
+    );
   });
 });
 

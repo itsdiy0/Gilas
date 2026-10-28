@@ -289,6 +289,11 @@ main {
   box-shadow: 0 0 0 3px rgb(88 118 99 / 35%);
 }
 
+.task-card.is-card-drop-target {
+  outline: 2px solid #75947b;
+  outline-offset: 2px;
+}
+
 .drag-handle {
   position: absolute;
   z-index: 1;

@@ -39,6 +39,8 @@ interface PointerDrag {
   ghost: HTMLElement | undefined;
   target: HTMLElement | undefined;
   targetStatus: TaskStatus | undefined;
+  targetTaskId: string | undefined;
+  targetPosition: "beforeId" | "afterId" | undefined;
 }
 
 interface KeyboardDrag {
@@ -109,10 +111,25 @@ async function loadBoard(): Promise<void> {
   }
 }
 
-async function moveTask(taskId: string, status: TaskStatus): Promise<void> {
+async function moveTask(
+  taskId: string,
+  status: TaskStatus,
+  position?: { beforeId: string } | { afterId: string },
+): Promise<void> {
   const task = currentPayload?.tasks.find((item) => item.id === taskId);
   if (task === undefined || pendingMoves.has(taskId)) return;
-  if (task.status === status) {
+  if (position !== undefined) {
+    const anchorId = "beforeId" in position ? position.beforeId : position.afterId;
+    const anchor = currentPayload?.tasks.find((item) => item.id === anchorId);
+    if (anchor !== undefined && anchor.section !== task.section) {
+      if (task.status === status) {
+        setConnection("live", "Tasks can only be reordered within the same milestone");
+        return;
+      }
+      position = undefined;
+    }
+  }
+  if (task.status === status && position === undefined) {
     setConnection("live", `${taskId} is already in ${status}`);
     return;
   }
@@ -123,7 +140,7 @@ async function moveTask(taskId: string, status: TaskStatus): Promise<void> {
     const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/status`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, ...position }),
     });
     const result = (await response.json()) as BoardPayload | { error: string };
     if (!response.ok || ("error" in result && result.error !== undefined)) {
@@ -161,6 +178,28 @@ function addCardDragHandlers(card: HTMLElement, task: TaskView, handle: HTMLButt
     card.classList.remove("is-dragging");
     clearDropTargets();
   });
+  card.addEventListener("dragover", (event) => {
+    if (event.dataTransfer === null || !event.dataTransfer.types.includes("text/plain")) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    card.classList.add("is-card-drop-target");
+  });
+  card.addEventListener("dragleave", (event) => {
+    if (!card.contains(event.relatedTarget as Node | null))
+      card.classList.remove("is-card-drop-target");
+  });
+  card.addEventListener("drop", (event) => {
+    event.preventDefault();
+    card.classList.remove("is-card-drop-target");
+    const taskId = event.dataTransfer?.getData("text/plain");
+    if (taskId === undefined || taskId === "" || taskId === task.id || task.status === undefined)
+      return;
+    const position =
+      event.clientY < card.getBoundingClientRect().top + card.offsetHeight / 2
+        ? { beforeId: task.id }
+        : { afterId: task.id };
+    void moveTask(taskId, task.status, position);
+  });
   card.addEventListener("keydown", (event) => handleKeyboardDrag(event, card, task));
   handle.addEventListener("pointerdown", (event) => beginPointerDrag(event, card, task, handle));
 }
@@ -175,7 +214,7 @@ function renderTask(task: TaskView): HTMLElement {
 
   const handle = element("button", "drag-handle", "⠿");
   handle.type = "button";
-  handle.setAttribute("aria-label", `Drag ${task.id} to another status`);
+  handle.setAttribute("aria-label", `Drag ${task.id} to reorder or change status`);
   card.append(handle);
   addCardDragHandlers(card, task, handle);
 
@@ -210,7 +249,11 @@ function addColumnDropHandlers(column: HTMLElement, status: TaskStatus): void {
     event.preventDefault();
     column.classList.remove("is-drop-target");
     const taskId = event.dataTransfer?.getData("text/plain");
-    if (taskId !== undefined && taskId !== "") void moveTask(taskId, status);
+    if (taskId !== undefined && taskId !== "") {
+      const tasks = currentPayload?.tasks.filter((task) => task.status === status) ?? [];
+      const last = tasks[tasks.length - 1];
+      void moveTask(taskId, status, last === undefined ? undefined : { afterId: last.id });
+    }
   });
 }
 
@@ -268,6 +311,21 @@ function render(payload: BoardPayload): void {
 
 function handleKeyboardDrag(event: KeyboardEvent, card: HTMLElement, task: TaskView): void {
   if (keyboardDrag?.taskId !== task.id) {
+    if (event.code === "ArrowUp" || event.code === "ArrowDown") {
+      const siblings = Array.from(
+        card.parentElement?.querySelectorAll<HTMLElement>(".task-card") ?? [],
+      );
+      const index = siblings.indexOf(card);
+      const neighbour = siblings[index + (event.code === "ArrowUp" ? -1 : 1)];
+      const neighbourId = neighbour?.dataset.taskId;
+      if (neighbourId !== undefined && task.status !== undefined) {
+        event.preventDefault();
+        const position =
+          event.code === "ArrowUp" ? { beforeId: neighbourId } : { afterId: neighbourId };
+        void moveTask(task.id, task.status, position);
+      }
+      return;
+    }
     if (event.code !== "Space") return;
     event.preventDefault();
     const initial = task.status === undefined ? 0 : statuses.indexOf(task.status);
@@ -330,6 +388,8 @@ function beginPointerDrag(
     ghost: undefined,
     target: undefined,
     targetStatus: undefined,
+    targetTaskId: undefined,
+    targetPosition: undefined,
   };
   drag.timer = window.setTimeout(() => activatePointerDrag(drag), 220);
   pointerDrag = drag;
@@ -361,14 +421,29 @@ function updatePointerDrag(drag: PointerDrag, x: number, y: number): void {
     drag.ghost.style.top = `${y + 14}px`;
   }
   const target =
-    document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-drop-status]") ?? undefined;
-  const status = statuses.find((item) => item === target?.dataset.dropStatus);
+    document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-task-id], [data-drop-status]") ??
+    undefined;
+  const taskTarget = target?.dataset.taskId;
+  const columnTarget =
+    taskTarget === undefined ? target : target?.closest<HTMLElement>("[data-drop-status]");
+  const status =
+    statuses.find((item) => item === columnTarget?.dataset.dropStatus) ??
+    currentPayload?.tasks.find((item) => item.id === taskTarget)?.status;
   if (drag.target !== target) {
-    drag.target?.classList.remove("is-drop-target");
-    if (status !== undefined) target?.classList.add("is-drop-target");
+    drag.target?.classList.remove("is-drop-target", "is-card-drop-target");
+    if (status !== undefined) {
+      target?.classList.add(taskTarget === undefined ? "is-drop-target" : "is-card-drop-target");
+    }
   }
-  drag.target = status === undefined ? undefined : target;
+  drag.target = status === undefined ? undefined : (target ?? undefined);
   drag.targetStatus = status;
+  drag.targetTaskId = taskTarget;
+  drag.targetPosition =
+    taskTarget === undefined
+      ? undefined
+      : y < (target?.getBoundingClientRect().top ?? 0) + (target?.offsetHeight ?? 0) / 2
+        ? "beforeId"
+        : "afterId";
 }
 
 function finishPointerDrag(drop = false): void {
@@ -376,12 +451,18 @@ function finishPointerDrag(drop = false): void {
   if (drag === undefined) return;
   window.clearTimeout(drag.timer);
   drag.card.classList.remove("is-dragging");
-  drag.target?.classList.remove("is-drop-target");
+  drag.target?.classList.remove("is-drop-target", "is-card-drop-target");
   drag.ghost?.remove();
   document.body.classList.remove("is-pointer-dragging");
   pointerDrag = undefined;
   if (drop && drag.active && drag.targetStatus !== undefined) {
-    void moveTask(drag.taskId, drag.targetStatus);
+    const position =
+      drag.targetTaskId === undefined || drag.targetPosition === undefined
+        ? undefined
+        : ({ [drag.targetPosition]: drag.targetTaskId } as
+            | { beforeId: string }
+            | { afterId: string });
+    void moveTask(drag.taskId, drag.targetStatus, position);
   }
 }
 
