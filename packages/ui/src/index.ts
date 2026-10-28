@@ -66,9 +66,8 @@ export function createTaskCard<T extends TaskCardData>(
   }
 
   if (task.section !== undefined) {
-    card.append(element(document, "p", "task-notes", task.section));
+    card.append(element(document, "p", "task-section", task.section));
   }
-  if (task.notes !== "") card.append(element(document, "p", "task-notes", task.notes));
 
   const labels = element(document, "div", "task-labels");
   if (task.type !== "") {
@@ -105,40 +104,49 @@ export function createTaskDetailsDialog<T extends TaskCardData>(
   const dialog = element(document, "dialog", "task-details-dialog");
   dialog.setAttribute("aria-labelledby", "task-details-title");
 
-  const panel = element(document, "div", "task-details-panel");
-  const header = element(document, "div", "task-details-header");
-  const heading = element(document, "div");
-  heading.append(element(document, "p", "task-details-eyebrow", "Task details"));
-  const title = element(document, "h2", undefined, task.title);
-  title.id = "task-details-title";
-  heading.append(title);
-
+  const panel = element(document, "article", "task-details-panel");
+  const header = element(document, "header", "task-details-header");
+  const heading = element(document, "div", "task-details-heading");
   const context = element(document, "div", "task-details-context");
-  context.append(element(document, "span", "task-details-id", task.id));
+  context.append(element(document, "span", "task-details-eyebrow", `Task ${task.id}`));
   const status = element(document, "span", "task-details-status", task.status ?? "Unrecognised");
   status.dataset.status = task.status?.toLowerCase().replaceAll(" ", "-") ?? "unrecognised";
   context.append(status);
   heading.append(context);
+  const title = element(document, "h2", undefined, task.title);
+  title.id = "task-details-title";
+  heading.append(title);
 
-  const close = element(document, "button", "task-details-close", "Close");
+  const close = element(document, "button", "task-details-close", "×");
   close.type = "button";
   close.setAttribute("aria-label", "Close task details");
   close.addEventListener("click", () => dialog.close());
   header.append(heading, close);
   panel.append(header);
 
+  const body = element(document, "div", "task-details-body");
   const description = element(document, "section", "task-details-description");
-  const descriptionHeading = element(document, "div", "task-details-section-heading");
-  descriptionHeading.append(element(document, "h3", undefined, "Description"));
-  descriptionHeading.append(element(document, "span", "task-details-description-mark", "✦"));
-  description.append(descriptionHeading);
+  description.setAttribute("aria-labelledby", "task-details-description-title");
+  const descriptionTitle = element(document, "h3", undefined, "Description");
+  descriptionTitle.id = "task-details-description-title";
+  description.append(descriptionTitle);
   description.append(
-    element(document, "p", undefined, task.notes === "" ? "No description provided." : task.notes),
+    element(
+      document,
+      "p",
+      task.notes === ""
+        ? "task-details-description-copy is-empty"
+        : "task-details-description-copy",
+      task.notes === "" ? "No description provided." : task.notes,
+    ),
   );
-  panel.append(description);
+  body.append(description);
 
-  const details = element(document, "section", "task-details-section");
-  details.append(element(document, "h3", undefined, "Details"));
+  const details = element(document, "aside", "task-details-section");
+  details.setAttribute("aria-labelledby", "task-details-properties-title");
+  const detailsTitle = element(document, "h3", undefined, "Properties");
+  detailsTitle.id = "task-details-properties-title";
+  details.append(detailsTitle);
   const metadata = element(document, "dl", "task-details-metadata");
   const addMetadata = (label: string, value: string | undefined) => {
     const item = element(document, "div", "task-details-item");
@@ -151,7 +159,8 @@ export function createTaskDetailsDialog<T extends TaskCardData>(
   addMetadata("Size", task.size);
   addMetadata("Milestone", task.section);
   details.append(metadata);
-  panel.append(details);
+  body.append(details);
+  panel.append(body);
 
   dialog.append(panel);
   dialog.addEventListener("click", (event) => {
