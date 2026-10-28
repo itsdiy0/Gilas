@@ -135,7 +135,7 @@
 
 .column-heading h3 {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: -0.015em;
@@ -341,7 +341,7 @@ body.is-pointer-dragging {
 
 .task-card h4 {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.018em;
@@ -469,7 +469,7 @@ body.is-pointer-dragging {
 
 .task-details-header h2 {
   margin: 15px 0 0;
-  font-family: "Avenir Next", Avenir, Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   font-size: clamp(25px, 4vw, 36px);
   font-weight: 760;
   letter-spacing: -0.035em;
