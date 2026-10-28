@@ -4,6 +4,7 @@ export interface TaskCardData {
   type: string;
   priority: string | undefined;
   size: string | undefined;
+  status?: string | undefined;
   notes: string;
   section: string | undefined;
 }
@@ -53,6 +54,7 @@ export function createTaskCard<T extends TaskCardData>(
   card.tabIndex = 0;
   card.dataset.taskId = task.id;
   card.setAttribute("aria-label", `${task.id}: ${task.title}`);
+  card.setAttribute("aria-haspopup", "dialog");
   card.append(element(document, "p", "task-id", task.id));
   card.append(element(document, "h4", undefined, task.title));
 
@@ -93,6 +95,58 @@ export function createTaskCard<T extends TaskCardData>(
     labels.append(element(document, "span", "task-label size", task.size));
   if (labels.childElementCount > 0) card.append(labels);
   return card;
+}
+
+export function createTaskDetailsDialog<T extends TaskCardData>(
+  task: T,
+  options: { document?: Document } = {},
+): HTMLDialogElement {
+  const document = options.document ?? window.document;
+  const dialog = element(document, "dialog", "task-details-dialog");
+  dialog.setAttribute("aria-labelledby", "task-details-title");
+
+  const panel = element(document, "div", "task-details-panel");
+  const header = element(document, "div", "task-details-header");
+  const heading = element(document, "div");
+  heading.append(element(document, "p", "task-details-eyebrow", "Task details"));
+  const title = element(document, "h2", undefined, task.title);
+  title.id = "task-details-title";
+  heading.append(title);
+
+  const close = element(document, "button", "task-details-close", "Close");
+  close.type = "button";
+  close.setAttribute("aria-label", "Close task details");
+  close.addEventListener("click", () => dialog.close());
+  header.append(heading, close);
+  panel.append(header);
+
+  const description = element(document, "section", "task-details-description");
+  description.append(element(document, "h3", undefined, "Description"));
+  description.append(
+    element(document, "p", undefined, task.notes === "" ? "No description provided." : task.notes),
+  );
+  panel.append(description);
+
+  const metadata = element(document, "dl", "task-details-metadata");
+  const addMetadata = (label: string, value: string | undefined) => {
+    const item = element(document, "div", "task-details-item");
+    item.append(element(document, "dt", undefined, label));
+    item.append(element(document, "dd", undefined, value || "Not set"));
+    metadata.append(item);
+  };
+  addMetadata("ID", task.id);
+  addMetadata("Type", task.type);
+  addMetadata("Priority", task.priority);
+  addMetadata("Size", task.size);
+  addMetadata("Status", task.status ?? "Unrecognised");
+  addMetadata("Milestone", task.section);
+  panel.append(metadata);
+
+  dialog.append(panel);
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+  return dialog;
 }
 
 export function createTaskColumn<T extends TaskCardData>(

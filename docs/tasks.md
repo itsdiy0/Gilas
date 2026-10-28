@@ -27,7 +27,7 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 | G-9  | Shared board components in `packages/ui`           | feature | P2       | L    | Done    |       |
 | G-10 | Web app with live file watching                    | feature | P2       | M    | Done        |       |
 | G-12 | Reorder tasks within a column by drag and drop     | feature | P1       | M    | Done    | Allow drag and drop to reorder tasks within the same status column as well as move them between statuses. |
-| G-13 | Show task details in a modal                       | feature | P1       | M    | Backlog | Open a modal when a task is clicked; show its description and metadata. |
+| G-13 | Show task details in a modal                       | feature | P1       | M    | Done    | Open a modal when a task is clicked; show its description and metadata. |
 | G-14 | Size column scroll areas relative to the viewport  | feature | P1       | S    | Backlog | Base each column’s vertical task-list height on a percentage of the window height so tasks stay in the viewport. |
 | G-15 | Redesign the board with themes and accent colours  | feature | P1       | L    | Backlog | Use the mockflow-apple-liquid-glass skill. Include selectable accent colour and light/dark themes. The skill requires a MockFlow WireframePro render. |
 | G-16 | Add global task search                             | feature | P1       | M    | Backlog | Search tasks from a global control at the top of the board. |
