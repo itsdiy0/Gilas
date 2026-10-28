@@ -149,7 +149,7 @@ body::before {
 .page-header,
 main,
 .page-footer {
-  width: min(100% - 56px, 1500px);
+  width: calc(100% - 56px);
   margin-inline: auto;
 }
 
@@ -689,7 +689,7 @@ main {
   .page-header,
   main,
   .page-footer {
-    width: min(100% - 40px, 1500px);
+    width: calc(100% - 40px);
   }
 
   .page-header {
@@ -718,7 +718,7 @@ main {
   .page-header,
   main,
   .page-footer {
-    width: min(100% - 32px, 1500px);
+    width: calc(100% - 32px);
   }
 
   .page-header {

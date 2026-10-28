@@ -34,7 +34,7 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 | G-18 | Make column widths resizable by dragging           | feature | P2       | M    | Done    | Drag or use the keyboard on each column edge; widths are saved in the browser. |
 | G-19 | Use a readable, less playful interface font        | feature | P2       | S    | Done    | Use the familiar Arial and Helvetica stack across the web board and shared UI. |
 | G-20 | Add board-wide and per-column filters              | feature | P1       | M    | Done    | Keep board-wide attribute filters and add text filters above each status column. |
-| G-17 | Use the full available page width                  | feature | P1       | S    | Backlog | Use the full viewport width instead of centring the board in a narrow container. |
+| G-17 | Use the full available page width                  | feature | P1       | S    | Done    | Use the full viewport width with consistent responsive page gutters. |
 
 ## M4 · VS Code extension
 

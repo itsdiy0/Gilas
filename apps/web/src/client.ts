@@ -186,11 +186,11 @@ function renderedColumnWidths(): Record<TaskStatus, number> {
 }
 
 function updateResizeHandleValues(): void {
-  const renderedWidths = columnWidths === undefined ? renderedColumnWidths() : undefined;
+  const renderedWidths = renderedColumnWidths();
   for (const handle of board.querySelectorAll<HTMLElement>(".column-resizer")) {
     const status = statuses.find((item) => item === handle.dataset.resizeStatus);
     if (status === undefined) continue;
-    const width = columnWidths?.[status] ?? renderedWidths?.[status] ?? minimumColumnWidth;
+    const width = renderedWidths[status];
     handle.setAttribute("aria-valuenow", String(Math.round(width)));
   }
 }
@@ -204,7 +204,9 @@ function applyColumnWidths(): void {
   }
   board.classList.add("has-column-widths");
   board.style.gridTemplateColumns = [
-    ...statuses.map((status) => `${Math.round(columnWidths?.[status] ?? minimumColumnWidth)}px`),
+    ...statuses.map(
+      (status) => `minmax(${Math.round(columnWidths?.[status] ?? minimumColumnWidth)}px, 1fr)`,
+    ),
     ...(board.querySelector(".column:not([data-drop-status])") === null
       ? []
       : ["minmax(150px, 1fr)"]),
@@ -219,7 +221,7 @@ function handleColumnResizeKeydown(event: KeyboardEvent): void {
   const status = statuses.find((item) => item === handle.dataset.resizeStatus);
   if (status === undefined) return;
   event.preventDefault();
-  const widths = columnWidths ?? renderedColumnWidths();
+  const widths = renderedColumnWidths();
   const step = event.shiftKey ? 40 : 12;
   const change = event.code === "ArrowRight" ? step : -step;
   columnWidths = {
@@ -234,7 +236,7 @@ function beginColumnResize(event: PointerEvent, handle: HTMLElement): void {
   if (event.button !== 0 || !window.matchMedia("(min-width: 1200px)").matches) return;
   const status = statuses.find((item) => item === handle.dataset.resizeStatus);
   if (status === undefined) return;
-  const widths = columnWidths ?? renderedColumnWidths();
+  const widths = renderedColumnWidths();
   columnWidths = widths;
   columnResizeDrag = {
     pointerId: event.pointerId,
