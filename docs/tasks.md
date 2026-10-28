@@ -30,7 +30,7 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 | G-13 | Show task details in a modal                       | feature | P1       | M    | Done    | Keep descriptions off cards and show task information in a reorganised, responsive modal. |
 | G-14 | Size column scroll areas relative to the viewport  | feature | P1       | S    | Done    | Keep task lists within columns sized to the available viewport height. |
 | G-15 | Redesign the board with themes and accent colours  | feature | P1       | L    | Done    | Added light/dark themes, five accents, a Liquid Glass render, and matching glass task cards. |
-| G-16 | Add global task search                             | feature | P1       | M    | Backlog | Search tasks from a global control at the top of the board. |
+| G-16 | Add global task search                             | feature | P1       | M    | Done    | Keep search results in status columns; filter by type, priority, size and milestone. |
 | G-17 | Use the full available page width                  | feature | P1       | S    | Backlog | Use the full viewport width instead of centring the board in a narrow container. |
 | G-18 | Make column widths resizable by dragging           | feature | P2       | M    | Backlog | Allow column widths to be resized by dragging their edge. |
 | G-19 | Use a readable, less playful interface font        | feature | P2       | S    | Backlog | Replace the current font with a readable, less playful option. |

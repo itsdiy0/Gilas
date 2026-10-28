@@ -38,6 +38,7 @@ export type WatchDirectory = (
 
 const PUBLIC_DIRECTORY = resolve(process.cwd(), "public");
 const CLIENT_SCRIPT = resolve(process.cwd(), "dist/browser/apps/web/src/client.js");
+const SEARCH_SCRIPT = resolve(process.cwd(), "dist/browser/apps/web/src/search.js");
 const SHARED_UI_SCRIPT = resolve(process.cwd(), "dist/browser/packages/ui/src/index.js");
 const SHARED_UI_STYLES = resolve(process.cwd(), "../../packages/ui/src/styles.css");
 const STATIC_FILES = new Map<string, { path: string; type: string }>([
@@ -46,6 +47,7 @@ const STATIC_FILES = new Map<string, { path: string; type: string }>([
   ["/styles.css", { path: join(PUBLIC_DIRECTORY, "styles.css"), type: "text/css; charset=utf-8" }],
   ["/ui.css", { path: SHARED_UI_STYLES, type: "text/css; charset=utf-8" }],
   ["/client.js", { path: CLIENT_SCRIPT, type: "text/javascript; charset=utf-8" }],
+  ["/search.js", { path: SEARCH_SCRIPT, type: "text/javascript; charset=utf-8" }],
   ["/packages/ui/src/index.js", { path: SHARED_UI_SCRIPT, type: "text/javascript; charset=utf-8" }],
 ]);
 
