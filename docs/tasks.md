@@ -29,7 +29,7 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 | G-12 | Reorder tasks within a column by drag and drop     | feature | P1       | M    | Done    | Allow drag and drop to reorder tasks within the same status column as well as move them between statuses. |
 | G-13 | Show task details in a modal                       | feature | P1       | M    | Done    | Open a modal when a task is clicked; show its description and metadata. |
 | G-14 | Size column scroll areas relative to the viewport  | feature | P1       | S    | Backlog | Base each column’s vertical task-list height on a percentage of the window height so tasks stay in the viewport. |
-| G-15 | Redesign the board with themes and accent colours  | feature | P1       | L    | Done    | Added light/dark themes and five accents; created the MockFlow WireframePro render. |
+| G-15 | Redesign the board with themes and accent colours  | feature | P1       | L    | Done    | Added light/dark themes, five accents, a Liquid Glass render, and matching glass task cards. |
 | G-16 | Add global task search                             | feature | P1       | M    | Backlog | Search tasks from a global control at the top of the board. |
 | G-17 | Use the full available page width                  | feature | P1       | S    | Backlog | Use the full viewport width instead of centring the board in a narrow container. |
 | G-18 | Make column widths resizable by dragging           | feature | P2       | M    | Backlog | Allow column widths to be resized by dragging their edge. |

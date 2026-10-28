@@ -66,7 +66,7 @@ export function createTaskCard<T extends TaskCardData>(
   }
 
   if (task.section !== undefined) {
-    card.append(element(document, "p", "task-notes", task.section));
+    card.append(element(document, "p", "task-section", task.section));
   }
   if (task.notes !== "") card.append(element(document, "p", "task-notes", task.notes));
 
