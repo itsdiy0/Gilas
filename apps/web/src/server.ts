@@ -37,12 +37,16 @@ export type WatchDirectory = (
 };
 
 const PUBLIC_DIRECTORY = resolve(process.cwd(), "public");
-const CLIENT_SCRIPT = resolve(process.cwd(), "dist/client.js");
+const CLIENT_SCRIPT = resolve(process.cwd(), "dist/browser/apps/web/src/client.js");
+const SHARED_UI_SCRIPT = resolve(process.cwd(), "dist/browser/packages/ui/src/index.js");
+const SHARED_UI_STYLES = resolve(process.cwd(), "../../packages/ui/src/styles.css");
 const STATIC_FILES = new Map<string, { path: string; type: string }>([
   ["/", { path: join(PUBLIC_DIRECTORY, "index.html"), type: "text/html; charset=utf-8" }],
   ["/index.html", { path: join(PUBLIC_DIRECTORY, "index.html"), type: "text/html; charset=utf-8" }],
   ["/styles.css", { path: join(PUBLIC_DIRECTORY, "styles.css"), type: "text/css; charset=utf-8" }],
+  ["/ui.css", { path: SHARED_UI_STYLES, type: "text/css; charset=utf-8" }],
   ["/client.js", { path: CLIENT_SCRIPT, type: "text/javascript; charset=utf-8" }],
+  ["/packages/ui/src/index.js", { path: SHARED_UI_SCRIPT, type: "text/javascript; charset=utf-8" }],
 ]);
 
 class RequestError extends Error {

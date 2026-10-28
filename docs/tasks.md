@@ -24,7 +24,7 @@ Gilas tracks itself here, in its own format. See `docs/format.md` once it exists
 
 | ID   | Task                                               | Type    | Priority | Size | Status  | Notes |
 | ---- | -------------------------------------------------- | ------- | -------- | ---- | ------- | ----- |
-| G-9  | Shared board components in `packages/ui`           | feature | P2       | L    | Backlog |       |
+| G-9  | Shared board components in `packages/ui`           | feature | P2       | L    | Done    |       |
 | G-10 | Web app with live file watching                    | feature | P2       | M    | Done        |       |
 | G-12 | Reorder tasks within a column by drag and drop     | feature | P1       | M    | Done    | Allow drag and drop to reorder tasks within the same status column as well as move them between statuses. |
 | G-13 | Show task details in a modal                       | feature | P1       | M    | Backlog | Open a modal when a task is clicked; show its description and metadata. |
